@@ -92,7 +92,7 @@ function ChatWindow() {
     );
 
     try {
-      const response = await fetch('http://localhost:8000/api/export/figma', {
+      const response = await fetch('/api/export/figma', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

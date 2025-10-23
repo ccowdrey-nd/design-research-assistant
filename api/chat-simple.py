@@ -265,21 +265,23 @@ These colors are defined in our Brand Asset Kit and should be used consistently 
         )
     
     # Check if user is asking about latest files
-    if any(keyword in message.lower() for keyword in ['latest files', 'recent files', 'new files']):
+    if any(keyword in message.lower() for keyword in ['latest files', 'recent files', 'new files', 'smb', 'figma file']):
         try:
             files = figma_client.get_team_files()
             # Sort by last modified
             files.sort(key=lambda x: x.get('last_modified', ''), reverse=True)
             
             response = "**Latest Figma Files:**\n\n"
+            sources = []
             for i, file in enumerate(files[:10]):  # Show top 10
                 response += f"{i+1}. **{file['name']}**\n"
                 response += f"   Last modified: {file.get('last_modified', 'Unknown')}\n"
                 response += f"   URL: {file['url']}\n\n"
+                sources.append(file['url'])
             
             return ChatResponse(
                 response=response.strip(),
-                sources=["Figma API"],
+                sources=sources,
                 example_images=[]
             )
         except Exception as e:
@@ -290,27 +292,30 @@ These colors are defined in our Brand Asset Kit and should be used consistently 
             )
     
     # Check if user is searching for files
-    if any(keyword in message.lower() for keyword in ['search', 'find', 'look for', 'show me']):
+    if any(keyword in message.lower() for keyword in ['search', 'find', 'look for', 'show me', 'smb', 'figma file']):
         try:
             # Extract search query
             search_query = message.lower()
-            for word in ['search', 'find', 'look for', 'show me', 'files']:
+            for word in ['search', 'find', 'look for', 'show me', 'files', 'figma file', 'what\'s the latest']:
                 search_query = search_query.replace(word, '').strip()
             
             files = figma_client.search_files(search_query)
             
             if files:
                 response = f"**Found {len(files)} files matching '{search_query}':**\n\n"
+                sources = []
                 for i, file in enumerate(files[:10]):  # Show top 10
                     response += f"{i+1}. **{file['name']}**\n"
                     response += f"   Last modified: {file.get('last_modified', 'Unknown')}\n"
                     response += f"   URL: {file['url']}\n\n"
+                    sources.append(file['url'])
             else:
                 response = f"No files found matching '{search_query}'"
+                sources = []
             
             return ChatResponse(
                 response=response.strip(),
-                sources=["Figma API"],
+                sources=sources,
                 example_images=[]
             )
         except Exception as e:

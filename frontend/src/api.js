@@ -28,6 +28,15 @@ class ApiClient {
     return response.data;
   }
 
+  async exportFigmaAsset(nodeName, nodeId, color) {
+    const response = await this.client.post('/api/export/figma', {
+      node_name: nodeName,
+      node_id: nodeId,
+      color: color,
+    });
+    return response.data;
+  }
+
   async sendMessageStreaming(message, conversationHistory = []) {
     const response = await this.client.post(
       '/api/chat',
