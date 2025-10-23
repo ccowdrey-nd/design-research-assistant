@@ -1,0 +1,41 @@
+{
+  "name": "design-assistant-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Design Assistant Chatbot",
+  "private": true,
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.21.0",
+    "react-scripts": "5.0.1",
+    "@okta/okta-react": "^6.7.0",
+    "@okta/okta-auth-js": "^7.5.0",
+    "axios": "^1.6.5",
+    "react-markdown": "^9.0.1",
+    "react-dropzone": "^14.2.3"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
+
