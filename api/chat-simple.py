@@ -599,58 +599,52 @@ async def export_figma(export_request: ExportRequest):
         # Use Brand Asset Kit file key
         brand_kit_file_key = os.getenv('FIGMA_BRAND_KIT_FILE_KEY', '3x616Uy5sRIDXcXHlNzyB7')
         
-        # Try to export from actual Figma file
+        # Try to export from actual Figma file with timeout handling
         try:
-            # Get the file data first
-            file_data = figma_client.get_file(brand_kit_file_key)
+            import signal
+            import time
             
-            # Search for the node by name in the file
-            nodes = figma_client.search_node_by_name(brand_kit_file_key, export_request.node_name)
+            # Set up timeout for Figma API calls (10 seconds)
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Figma API timeout")
             
-            if nodes and len(nodes) > 0:
-                # Use the first matching node
-                node = nodes[0]
-                node_id = node['id']
+            # Set up signal handler for timeout
+            old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(10)  # 10 second timeout
+            
+            try:
+                # Get the file data first
+                file_data = figma_client.get_file(brand_kit_file_key)
                 
-                # Export the node as SVG
-                svg_content = figma_client.export_node_as_svg(brand_kit_file_key, node_id, export_request.color)
+                # Search for the node by name in the file
+                nodes = figma_client.search_node_by_name(brand_kit_file_key, export_request.node_name)
                 
-                if svg_content:
-                    return StreamingResponse(
-                        io.BytesIO(svg_content.encode()),
-                        media_type="image/svg+xml",
-                        headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
-                    )
+                if nodes and len(nodes) > 0:
+                    # Use the first matching node
+                    node = nodes[0]
+                    node_id = node['id']
+                    
+                    # Export the node as SVG
+                    svg_content = figma_client.export_node_as_svg(brand_kit_file_key, node_id, export_request.color)
+                    
+                    if svg_content:
+                        signal.alarm(0)  # Cancel timeout
+                        return StreamingResponse(
+                            io.BytesIO(svg_content.encode()),
+                            media_type="image/svg+xml",
+                            headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
+                        )
+                    else:
+                        raise Exception("Failed to export SVG from Figma")
                 else:
-                    raise Exception("Failed to export SVG from Figma")
-            else:
-                # Node not found, return a placeholder with the requested color
-                if export_request.color:
-                    placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
-  <rect width="200" height="100" fill="{export_request.color}" stroke="#ccc" stroke-width="2"/>
-  <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="white">
-    {export_request.node_name}
-  </text>
-  <text x="100" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">
-    {export_request.color}
-  </text>
-</svg>'''
-                else:
-                    placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
-  <rect width="200" height="100" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/>
-  <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">
-    {export_request.node_name}
-  </text>
-  <text x="100" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#999">
-    Node not found in Brand Kit
-  </text>
-</svg>'''
+                    raise Exception(f"Node '{export_request.node_name}' not found in Brand Kit")
+                    
+            finally:
+                signal.alarm(0)  # Cancel timeout
+                signal.signal(signal.SIGALRM, old_handler)  # Restore old handler
                 
-                return StreamingResponse(
-                    io.BytesIO(placeholder_svg.encode()),
-                    media_type="image/svg+xml",
-                    headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
-                )
+        except TimeoutError:
+            raise Exception("Figma API timeout - please try again")
                 
         except Exception as figma_error:
             # If Figma export fails, return a placeholder with the requested color
