@@ -104,9 +104,22 @@ class FigmaClient:
         
         def search_nodes(nodes, target_name):
             results = []
+            target_lower = target_name.lower()
+            
             for node in nodes:
-                if node.get('name', '').lower() == target_name.lower():
+                node_name = node.get('name', '').lower()
+                
+                # Exact match
+                if node_name == target_lower:
                     results.append(node)
+                # Partial match (contains the target name)
+                elif target_lower in node_name or node_name in target_lower:
+                    results.append(node)
+                # Fuzzy match for common variations
+                elif any(word in node_name for word in target_lower.split()):
+                    results.append(node)
+                
+                # Search children recursively
                 if 'children' in node:
                     results.extend(search_nodes(node['children'], target_name))
             return results
@@ -148,15 +161,20 @@ class FigmaClient:
 # Initialize Figma client
 figma_client = FigmaClient()
 
-# Asset mapping for common requests
+# Asset mapping for common requests - updated with correct Brand Kit node names
 ASSET_MAP = {
-    'primary logo': ('logo-nextdoor-wordmark-0513', '586:11968'),
-    'logo': ('logo-nextdoor-wordmark-0513', '586:11968'),
-    'house icon': ('logo-nextdoor', '336:2901'),
-    'home icon': ('logo-nextdoor', '336:2901'),
-    'chat icon': ('chat-right', '4087:39580'),
+    'primary logo': ('Nextdoor Wordmark', None),
+    'logo': ('Nextdoor Wordmark', None),
+    'wordmark': ('Nextdoor Wordmark', None),
+    'house icon': ('Nextdoor House', None),
+    'home icon': ('Nextdoor House', None),
+    'house logo': ('Nextdoor House', None),
+    'chat icon': ('Chat Icon', None),
     'button': ('Button', None),
     'primary button': ('Button', None),
+    'nextdoor logo': ('Nextdoor Wordmark', None),
+    'nextdoor wordmark': ('Nextdoor Wordmark', None),
+    'nextdoor house': ('Nextdoor House', None),
 }
 
 def is_export_request(message):
@@ -260,11 +278,11 @@ async def chat_simple(chat_message: ChatMessage):
 
 These colors are defined in our Brand Asset Kit and should be used consistently across all Nextdoor materials.
         """
-        return ChatResponse(
-            response=brand_colors_response.strip(),
-            sources=["Brand Asset Kit"],
-            example_images=[]
-        )
+            return ChatResponse(
+                response=brand_colors_response.strip(),
+                sources=[],
+                example_images=[]
+            )
     
     # Check if user is asking about typography
     if any(keyword in message.lower() for keyword in ['typography', 'font', 'fonts', 'text', 'typeface', 'heading', 'body text']):
@@ -300,11 +318,11 @@ These colors are defined in our Brand Asset Kit and should be used consistently 
 
 These typography guidelines ensure consistent and readable text across all Nextdoor interfaces.
         """
-        return ChatResponse(
-            response=typography_response.strip(),
-            sources=["Brand Asset Kit"],
-            example_images=[]
-        )
+            return ChatResponse(
+                response=typography_response.strip(),
+                sources=[],
+                example_images=[]
+            )
     
     # Check if user is asking about spacing
     if any(keyword in message.lower() for keyword in ['spacing', 'margin', 'padding', 'gap', 'layout']):
@@ -335,11 +353,11 @@ These typography guidelines ensure consistent and readable text across all Nextd
 
 This spacing system creates consistent, balanced layouts across all Nextdoor products.
         """
-        return ChatResponse(
-            response=spacing_response.strip(),
-            sources=["Brand Asset Kit"],
-            example_images=[]
-        )
+            return ChatResponse(
+                response=spacing_response.strip(),
+                sources=[],
+                example_images=[]
+            )
     
     # Check if user is asking about components
     if any(keyword in message.lower() for keyword in ['component', 'components', 'button', 'buttons', 'input', 'form', 'card', 'cards']):
@@ -373,11 +391,11 @@ This spacing system creates consistent, balanced layouts across all Nextdoor pro
 
 All components follow our design system and are available in our Brand Asset Kit.
         """
-        return ChatResponse(
-            response=components_response.strip(),
-            sources=["Brand Asset Kit"],
-            example_images=[]
-        )
+            return ChatResponse(
+                response=components_response.strip(),
+                sources=[],
+                example_images=[]
+            )
     
     # Check if user is asking about design principles
     if any(keyword in message.lower() for keyword in ['design principle', 'design principles', 'guideline', 'guidelines', 'brand guideline', 'brand guidelines']):
@@ -411,11 +429,11 @@ All components follow our design system and are available in our Brand Asset Kit
 
 These principles guide all design decisions and ensure cohesive user experiences across Nextdoor.
         """
-        return ChatResponse(
-            response=principles_response.strip(),
-            sources=["Brand Asset Kit"],
-            example_images=[]
-        )
+            return ChatResponse(
+                response=principles_response.strip(),
+                sources=[],
+                example_images=[]
+            )
     
     # Check if user is asking about latest files
     if any(keyword in message.lower() for keyword in ['latest files', 'recent files', 'new files', 'smb', 'figma file']):
@@ -458,7 +476,7 @@ Once configured, I'll be able to search and export your Figma assets!"""
             
             return ChatResponse(
                 response=response.strip(),
-                sources=sources,
+                sources=[],
                 example_images=[]
             )
         except Exception as e:
@@ -491,7 +509,7 @@ Once configured, I'll be able to search and export your Figma assets!"""
             
             return ChatResponse(
                 response=response.strip(),
-                sources=sources,
+                sources=[],
                 example_images=[]
             )
         except Exception as e:
@@ -537,7 +555,7 @@ Once configured, I'll be able to search and export your Figma assets!"""
             
             return ChatResponse(
                 response=response,
-                sources=["Brand Asset Kit"],
+                sources=[],
                 example_images=[],
                 export_data=export_data
             )
@@ -581,9 +599,34 @@ async def export_figma(export_request: ExportRequest):
         # Use Brand Asset Kit file key
         brand_kit_file_key = os.getenv('FIGMA_BRAND_KIT_FILE_KEY', '3x616Uy5sRIDXcXHlNzyB7')
         
-        # For now, return a placeholder SVG with the requested color
-        if export_request.color:
-            placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+        # Try to export from actual Figma file
+        try:
+            # Get the file data first
+            file_data = figma_client.get_file(brand_kit_file_key)
+            
+            # Search for the node by name in the file
+            nodes = figma_client.search_node_by_name(brand_kit_file_key, export_request.node_name)
+            
+            if nodes and len(nodes) > 0:
+                # Use the first matching node
+                node = nodes[0]
+                node_id = node['id']
+                
+                # Export the node as SVG
+                svg_content = figma_client.export_node_as_svg(brand_kit_file_key, node_id, export_request.color)
+                
+                if svg_content:
+                    return StreamingResponse(
+                        io.BytesIO(svg_content.encode()),
+                        media_type="image/svg+xml",
+                        headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
+                    )
+                else:
+                    raise Exception("Failed to export SVG from Figma")
+            else:
+                # Node not found, return a placeholder with the requested color
+                if export_request.color:
+                    placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
   <rect width="200" height="100" fill="{export_request.color}" stroke="#ccc" stroke-width="2"/>
   <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="white">
     {export_request.node_name}
@@ -592,22 +635,51 @@ async def export_figma(export_request: ExportRequest):
     {export_request.color}
   </text>
 </svg>'''
-        else:
-            placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+                else:
+                    placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
   <rect width="200" height="100" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/>
   <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">
     {export_request.node_name}
   </text>
   <text x="100" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#999">
-    Real Figma Export Coming Soon
+    Node not found in Brand Kit
   </text>
 </svg>'''
-        
-        return StreamingResponse(
-            io.BytesIO(placeholder_svg.encode()),
-            media_type="image/svg+xml",
-            headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
-        )
+                
+                return StreamingResponse(
+                    io.BytesIO(placeholder_svg.encode()),
+                    media_type="image/svg+xml",
+                    headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
+                )
+                
+        except Exception as figma_error:
+            # If Figma export fails, return a placeholder with the requested color
+            if export_request.color:
+                placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="{export_request.color}" stroke="#ccc" stroke-width="2"/>
+  <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="white">
+    {export_request.node_name}
+  </text>
+  <text x="100" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">
+    {export_request.color}
+  </text>
+</svg>'''
+            else:
+                placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/>
+  <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">
+    {export_request.node_name}
+  </text>
+  <text x="100" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#999">
+    Figma Export Error: {str(figma_error)[:30]}...
+  </text>
+</svg>'''
+            
+            return StreamingResponse(
+                io.BytesIO(placeholder_svg.encode()),
+                media_type="image/svg+xml",
+                headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
+            )
         
     except Exception as e:
         # Return a more detailed error SVG
