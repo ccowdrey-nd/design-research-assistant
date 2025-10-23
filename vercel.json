@@ -19,6 +19,10 @@
       "dest": "/api/chat-simple.py"
     },
     {
+      "src": "/api/export/figma",
+      "dest": "/api/chat-simple.py"
+    },
+    {
       "src": "/(.*)",
       "dest": "frontend/$1"
     }
