@@ -38,7 +38,7 @@ class ExportRequest(BaseModel):
 
 class FigmaClient:
     def __init__(self):
-        self.api_token = os.getenv('FIGMA_API_TOKEN')
+        self.api_token = os.getenv('FIGMA_API_TOKEN') or os.getenv('FIGMA_ACCESS_TOKEN')
         self.team_id = os.getenv('FIGMA_TEAM_ID')
         self.base_url = "https://api.figma.com/v1"
         
@@ -418,7 +418,7 @@ These principles guide all design decisions and ensure cohesive user experiences
     # Check if user is asking about latest files
     if any(keyword in message.lower() for keyword in ['latest files', 'recent files', 'new files', 'smb', 'figma file']):
         # Check if Figma API is configured
-        if not os.getenv('FIGMA_API_TOKEN') or not os.getenv('FIGMA_TEAM_ID'):
+        if not (os.getenv('FIGMA_API_TOKEN') or os.getenv('FIGMA_ACCESS_TOKEN')) or not os.getenv('FIGMA_TEAM_ID'):
             response = """**Figma Integration Not Configured**
 
 To access your Figma files, you need to configure the following environment variables in Vercel:
@@ -522,7 +522,7 @@ Once configured, I'll be able to search and export your Figma assets!"""
             }
             
             # Check if Figma API is configured
-            if not os.getenv('FIGMA_API_TOKEN'):
+            if not (os.getenv('FIGMA_API_TOKEN') or os.getenv('FIGMA_ACCESS_TOKEN')):
                 response = f"I can export that for you! Click the download button below to get the {asset_name.lower()}"
                 if color:
                     response += f" in {color}"
@@ -558,7 +558,7 @@ async def export_figma(export_request: ExportRequest):
     """Export a Figma asset as SVG"""
     try:
         # Check if Figma API is configured
-        if not os.getenv('FIGMA_API_TOKEN'):
+        if not (os.getenv('FIGMA_API_TOKEN') or os.getenv('FIGMA_ACCESS_TOKEN')):
             # Return a placeholder SVG
             placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
   <rect width="200" height="100" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/>
