@@ -76,5 +76,6 @@ class ApiClient {
 }
 
 const apiClient = new ApiClient();
+export { apiClient };
 export default apiClient;
 
