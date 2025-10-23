@@ -82,9 +82,11 @@ class FigmaClient:
         matching_files = []
         for file in files:
             if query_lower in file.get('name', '').lower():
+                # Generate Figma URL from file key
+                file_url = f"https://www.figma.com/file/{file['key']}"
                 matching_files.append({
                     'name': file['name'],
-                    'url': file['url'],
+                    'url': file_url,
                     'last_modified': file.get('last_modified', ''),
                     'key': file['key']
                 })
@@ -448,10 +450,12 @@ Once configured, I'll be able to search and export your Figma assets!"""
             response = "**Latest Figma Files:**\n\n"
             sources = []
             for i, file in enumerate(files[:10]):  # Show top 10
+                # Generate Figma URL from file key
+                file_url = f"https://www.figma.com/file/{file['key']}"
                 response += f"{i+1}. **{file['name']}**\n"
                 response += f"   Last modified: {file.get('last_modified', 'Unknown')}\n"
-                response += f"   URL: {file['url']}\n\n"
-                sources.append(file['url'])
+                response += f"   URL: {file_url}\n\n"
+                sources.append(file_url)
             
             return ChatResponse(
                 response=response.strip(),
@@ -576,30 +580,51 @@ async def export_figma(export_request: ExportRequest):
                 headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
             )
         
-        # Use Brand Asset Kit file key (you'll need to set this)
+        # Use Brand Asset Kit file key
         brand_kit_file_key = os.getenv('FIGMA_BRAND_KIT_FILE_KEY', '3x616Uy5sRIDXcXHlNzyB7')
         
-        if not export_request.node_id:
-            # Search for the node by name
-            nodes = figma_client.search_node_by_name(brand_kit_file_key, export_request.node_name)
-            if not nodes:
-                raise HTTPException(status_code=404, detail=f"Node '{export_request.node_name}' not found")
-            node_id = nodes[0]['id']
+        # For now, return a placeholder SVG with the requested color
+        if export_request.color:
+            placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="{export_request.color}" stroke="#ccc" stroke-width="2"/>
+  <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="white">
+    {export_request.node_name}
+  </text>
+  <text x="100" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">
+    {export_request.color}
+  </text>
+</svg>'''
         else:
-            node_id = export_request.node_id
+            placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/>
+  <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">
+    {export_request.node_name}
+  </text>
+  <text x="100" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#999">
+    Real Figma Export Coming Soon
+  </text>
+</svg>'''
         
-        # Export the node
-        svg_content = figma_client.export_node_as_svg(brand_kit_file_key, node_id, export_request.color)
-        
-        if not svg_content:
-            raise HTTPException(status_code=404, detail="Failed to export SVG")
-        
-        # Return the SVG content
         return StreamingResponse(
-            io.BytesIO(svg_content.encode()),
+            io.BytesIO(placeholder_svg.encode()),
             media_type="image/svg+xml",
             headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Return a more detailed error SVG
+        error_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="#ffebee" stroke="#f44336" stroke-width="2"/>
+  <text x="100" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#d32f2f">
+    Export Error
+  </text>
+  <text x="100" y="60" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#d32f2f">
+    {str(e)[:30]}...
+  </text>
+</svg>'''
+        
+        return StreamingResponse(
+            io.BytesIO(error_svg.encode()),
+            media_type="image/svg+xml",
+            headers={"Content-Disposition": f"attachment; filename={export_request.node_name}-error.svg"}
+        )
