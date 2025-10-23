@@ -452,9 +452,8 @@ Once configured, I'll be able to search and export your Figma assets!"""
             for i, file in enumerate(files[:10]):  # Show top 10
                 # Generate Figma URL from file key
                 file_url = f"https://www.figma.com/file/{file['key']}"
-                response += f"{i+1}. **{file['name']}**\n"
-                response += f"   Last modified: {file.get('last_modified', 'Unknown')}\n"
-                response += f"   URL: {file_url}\n\n"
+                response += f"{i+1}. **[{file['name']}]({file_url})**\n"
+                response += f"   Last modified: {file.get('last_modified', 'Unknown')}\n\n"
                 sources.append(file_url)
             
             return ChatResponse(
@@ -483,9 +482,8 @@ Once configured, I'll be able to search and export your Figma assets!"""
                 response = f"**Found {len(files)} files matching '{search_query}':**\n\n"
                 sources = []
                 for i, file in enumerate(files[:10]):  # Show top 10
-                    response += f"{i+1}. **{file['name']}**\n"
-                    response += f"   Last modified: {file.get('last_modified', 'Unknown')}\n"
-                    response += f"   URL: {file['url']}\n\n"
+                    response += f"{i+1}. **[{file['name']}]({file['url']})**\n"
+                    response += f"   Last modified: {file.get('last_modified', 'Unknown')}\n\n"
                     sources.append(file['url'])
             else:
                 response = f"No files found matching '{search_query}'"
