@@ -266,6 +266,29 @@ These colors are defined in our Brand Asset Kit and should be used consistently 
     
     # Check if user is asking about latest files
     if any(keyword in message.lower() for keyword in ['latest files', 'recent files', 'new files', 'smb', 'figma file']):
+        # Check if Figma API is configured
+        if not os.getenv('FIGMA_API_TOKEN') or not os.getenv('FIGMA_TEAM_ID'):
+            response = """**Figma Integration Not Configured**
+
+To access your Figma files, you need to configure the following environment variables in Vercel:
+
+1. **FIGMA_API_TOKEN** - Your Figma personal access token
+2. **FIGMA_TEAM_ID** - Your Figma team ID
+3. **FIGMA_BRAND_KIT_FILE_KEY** - Your Brand Asset Kit file key
+
+**How to get these:**
+- **API Token**: Go to Figma → Settings → Account → Personal Access Tokens
+- **Team ID**: Found in your Figma team URL (figma.com/files/team/[TEAM_ID]/...)
+- **File Key**: Found in your Brand Asset Kit URL (figma.com/file/[FILE_KEY]/...)
+
+Once configured, I'll be able to search and export your Figma assets!"""
+            
+            return ChatResponse(
+                response=response.strip(),
+                sources=["Figma Setup Guide"],
+                example_images=[]
+            )
+        
         try:
             files = figma_client.get_team_files()
             # Sort by last modified
@@ -347,10 +370,17 @@ These colors are defined in our Brand Asset Kit and should be used consistently 
                 'color': color
             }
             
-            response = f"I can export that for you! Click the download button below to get the {asset_name.lower()}"
-            if color:
-                response += f" in {color}"
-            response += "."
+            # Check if Figma API is configured
+            if not os.getenv('FIGMA_API_TOKEN'):
+                response = f"I can export that for you! Click the download button below to get the {asset_name.lower()}"
+                if color:
+                    response += f" in {color}"
+                response += ".\n\n**Note:** Figma API is not configured, so this will download a placeholder SVG."
+            else:
+                response = f"I can export that for you! Click the download button below to get the {asset_name.lower()}"
+                if color:
+                    response += f" in {color}"
+                response += "."
             
             return ChatResponse(
                 response=response,
@@ -376,6 +406,25 @@ These colors are defined in our Brand Asset Kit and should be used consistently 
 async def export_figma(export_request: ExportRequest):
     """Export a Figma asset as SVG"""
     try:
+        # Check if Figma API is configured
+        if not os.getenv('FIGMA_API_TOKEN'):
+            # Return a placeholder SVG
+            placeholder_svg = f'''<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="100" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/>
+  <text x="100" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#666">
+    {export_request.node_name}
+  </text>
+  <text x="100" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#999">
+    Placeholder - Configure Figma API
+  </text>
+</svg>'''
+            
+            return StreamingResponse(
+                io.BytesIO(placeholder_svg.encode()),
+                media_type="image/svg+xml",
+                headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
+            )
+        
         # Use Brand Asset Kit file key (you'll need to set this)
         brand_kit_file_key = os.getenv('FIGMA_BRAND_KIT_FILE_KEY', '3x616Uy5sRIDXcXHlNzyB7')
         

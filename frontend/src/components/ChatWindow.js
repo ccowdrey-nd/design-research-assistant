@@ -84,6 +84,8 @@ function ChatWindow() {
   };
 
   const handleDownloadExport = async (exportData, messageIndex) => {
+    console.log('Starting export:', exportData);
+    
     // Set downloading state for this message
     setMessages((prev) =>
       prev.map((msg, idx) =>
@@ -92,6 +94,7 @@ function ChatWindow() {
     );
 
     try {
+      console.log('Sending request to:', '/api/export/figma');
       const response = await fetch('/api/export/figma', {
         method: 'POST',
         headers: {
@@ -100,12 +103,19 @@ function ChatWindow() {
         body: JSON.stringify(exportData),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
-        throw new Error('Export failed');
+        const errorText = await response.text();
+        console.error('Export failed:', errorText);
+        throw new Error(`Export failed: ${response.status} - ${errorText}`);
       }
 
       // Download the file
       const blob = await response.blob();
+      console.log('Blob created:', blob.size, 'bytes');
+      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -116,6 +126,8 @@ function ChatWindow() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
+      console.log('Download completed');
+
       // Show success state
       setMessages((prev) =>
         prev.map((msg, idx) =>
@@ -124,7 +136,7 @@ function ChatWindow() {
       );
     } catch (error) {
       console.error('Export error:', error);
-      alert('Failed to export asset. Please try again.');
+      alert(`Failed to export asset: ${error.message}`);
       
       // Clear downloading state
       setMessages((prev) =>
