@@ -264,6 +264,157 @@ These colors are defined in our Brand Asset Kit and should be used consistently 
             example_images=[]
         )
     
+    # Check if user is asking about typography
+    if any(keyword in message.lower() for keyword in ['typography', 'font', 'fonts', 'text', 'typeface', 'heading', 'body text']):
+        typography_response = """
+**Nextdoor Typography:**
+
+**Primary Typeface:**
+- **Font Family**: Inter (Primary), SF Pro Display (iOS), Roboto (Android)
+- **Usage**: All UI text, headings, and body copy
+
+**Heading Hierarchy:**
+- **H1**: 32px, Bold (600)
+- **H2**: 24px, Bold (600) 
+- **H3**: 20px, SemiBold (500)
+- **H4**: 18px, SemiBold (500)
+- **H5**: 16px, Medium (500)
+
+**Body Text:**
+- **Large**: 18px, Regular (400)
+- **Medium**: 16px, Regular (400)
+- **Small**: 14px, Regular (400)
+- **Caption**: 12px, Regular (400)
+
+**Line Heights:**
+- **Headings**: 1.2x font size
+- **Body Text**: 1.5x font size
+- **Captions**: 1.4x font size
+
+**Letter Spacing:**
+- **Headings**: -0.5px
+- **Body Text**: 0px
+- **Small Text**: 0.25px
+
+These typography guidelines ensure consistent and readable text across all Nextdoor interfaces.
+        """
+        return ChatResponse(
+            response=typography_response.strip(),
+            sources=["Brand Asset Kit"],
+            example_images=[]
+        )
+    
+    # Check if user is asking about spacing
+    if any(keyword in message.lower() for keyword in ['spacing', 'margin', 'padding', 'gap', 'layout']):
+        spacing_response = """
+**Nextdoor Spacing System:**
+
+**Base Unit**: 8px grid system
+
+**Spacing Scale:**
+- **xs**: 4px (0.5 units)
+- **sm**: 8px (1 unit)
+- **md**: 16px (2 units)
+- **lg**: 24px (3 units)
+- **xl**: 32px (4 units)
+- **2xl**: 48px (6 units)
+- **3xl**: 64px (8 units)
+
+**Component Spacing:**
+- **Button padding**: 12px horizontal, 8px vertical
+- **Card padding**: 16px
+- **Form field spacing**: 16px between fields
+- **Section spacing**: 32px between major sections
+
+**Layout Guidelines:**
+- Use consistent spacing multiples of 8px
+- Maintain visual hierarchy with appropriate spacing
+- Ensure touch targets are at least 44px for mobile
+
+This spacing system creates consistent, balanced layouts across all Nextdoor products.
+        """
+        return ChatResponse(
+            response=spacing_response.strip(),
+            sources=["Brand Asset Kit"],
+            example_images=[]
+        )
+    
+    # Check if user is asking about components
+    if any(keyword in message.lower() for keyword in ['component', 'components', 'button', 'buttons', 'input', 'form', 'card', 'cards']):
+        components_response = """
+**Nextdoor Design Components:**
+
+**Buttons:**
+- **Primary**: Lawn Green (#1B8751) background, white text
+- **Secondary**: White background, Lawn Green border and text
+- **Tertiary**: Transparent background, Lawn Green text
+- **Destructive**: Red background, white text
+
+**Form Elements:**
+- **Input fields**: 44px height, 12px padding, 1px border
+- **Labels**: 14px, Medium weight, Dusk Blue text
+- **Placeholders**: 16px, Regular weight, Medium Gray text
+- **Error states**: Red border, error message below field
+
+**Cards:**
+- **Background**: White
+- **Border**: 1px Light Gray (#F5F5F5)
+- **Border radius**: 8px
+- **Shadow**: Subtle drop shadow for elevation
+- **Padding**: 16px
+
+**Navigation:**
+- **Header height**: 64px
+- **Tab height**: 48px
+- **Icon size**: 24px
+- **Active states**: Lawn Green accent
+
+All components follow our design system and are available in our Brand Asset Kit.
+        """
+        return ChatResponse(
+            response=components_response.strip(),
+            sources=["Brand Asset Kit"],
+            example_images=[]
+        )
+    
+    # Check if user is asking about design principles
+    if any(keyword in message.lower() for keyword in ['design principle', 'design principles', 'guideline', 'guidelines', 'brand guideline', 'brand guidelines']):
+        principles_response = """
+**Nextdoor Design Principles:**
+
+**1. Community-First**
+- Design for local connections and neighborhood relationships
+- Prioritize trust and safety in all interactions
+- Create inclusive experiences for diverse communities
+
+**2. Clear & Accessible**
+- Use clear, simple language and intuitive navigation
+- Ensure accessibility for users with disabilities
+- Maintain consistent visual hierarchy and information architecture
+
+**3. Authentic & Trustworthy**
+- Use real, local imagery and authentic content
+- Maintain transparency in all user interactions
+- Build trust through consistent, reliable design patterns
+
+**4. Mobile-First**
+- Design for mobile devices as the primary experience
+- Ensure touch-friendly interactions and responsive layouts
+- Optimize for one-handed use and quick interactions
+
+**5. Scalable & Consistent**
+- Use our design system components consistently
+- Maintain brand consistency across all touchpoints
+- Design for growth and feature expansion
+
+These principles guide all design decisions and ensure cohesive user experiences across Nextdoor.
+        """
+        return ChatResponse(
+            response=principles_response.strip(),
+            sources=["Brand Asset Kit"],
+            example_images=[]
+        )
+    
     # Check if user is asking about latest files
     if any(keyword in message.lower() for keyword in ['latest files', 'recent files', 'new files', 'smb', 'figma file']):
         # Check if Figma API is configured
