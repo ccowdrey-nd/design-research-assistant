@@ -161,23 +161,23 @@ class FigmaClient:
 # Initialize Figma client
 figma_client = FigmaClient()
 
-# Asset mapping for common requests - updated with correct Brand Kit node names
+# Asset mapping for common requests - using exact node IDs from Brand Kit
 ASSET_MAP = {
-    'primary logo': ('Nextdoor Wordmark', None),
-    'logo': ('Nextdoor Wordmark', None),
-    'wordmark': ('Nextdoor Wordmark', None),
-    'house icon': ('Nextdoor House', None),
-    'home icon': ('Nextdoor House', None),
-    'house logo': ('Nextdoor House', None),
+    'primary logo': ('Nextdoor Wordmark', '8301:76523'),
+    'logo': ('Nextdoor Wordmark', '8301:76523'),
+    'wordmark': ('Nextdoor Wordmark', '8301:76523'),
+    'house icon': ('Nextdoor House', '8301:77181'),
+    'home icon': ('Nextdoor House', '8301:77181'),
+    'house logo': ('Nextdoor House', '8301:77181'),
     'chat icon': ('Chat Icon', None),
     'button': ('Button', None),
     'primary button': ('Button', None),
-    'nextdoor logo': ('Nextdoor Wordmark', None),
-    'nextdoor wordmark': ('Nextdoor Wordmark', None),
-    'nextdoor house': ('Nextdoor House', None),
+    'nextdoor logo': ('Nextdoor Wordmark', '8301:76523'),
+    'nextdoor wordmark': ('Nextdoor Wordmark', '8301:76523'),
+    'nextdoor house': ('Nextdoor House', '8301:77181'),
     # Add more specific mappings for your Brand Kit
-    'logo-nextdoor-wordmark-0513': ('Nextdoor Wordmark', None),
-    'logo-nextdoor': ('Nextdoor House', None),
+    'logo-nextdoor-wordmark-0513': ('Nextdoor Wordmark', '8301:76523'),
+    'logo-nextdoor': ('Nextdoor House', '8301:77181'),
     'chat-right': ('Chat Icon', None),
 }
 
@@ -603,32 +603,47 @@ async def export_figma(export_request: ExportRequest):
         # Use Brand Asset Kit file key
         brand_kit_file_key = os.getenv('FIGMA_BRAND_KIT_FILE_KEY', '3x616Uy5sRIDXcXHlNzyB7')
         
-        # Try to export from actual Figma file
+        # Try to export from actual Figma file using pre-loaded node IDs
         try:
-            # Get the file data first
-            file_data = figma_client.get_file(brand_kit_file_key)
-            
-            # Search for the node by name in the file
-            nodes = figma_client.search_node_by_name(brand_kit_file_key, export_request.node_name)
-            
-            if nodes and len(nodes) > 0:
-                # Use the first matching node
-                node = nodes[0]
-                node_id = node['id']
+            # Check if we have a pre-loaded node ID for this asset
+            if export_request.node_name.lower() in ASSET_MAP:
+                node_name, node_id = ASSET_MAP[export_request.node_name.lower()]
                 
-                # Export the node as SVG
-                svg_content = figma_client.export_node_as_svg(brand_kit_file_key, node_id, export_request.color)
-                
-                if svg_content:
-                    return StreamingResponse(
-                        io.BytesIO(svg_content.encode()),
-                        media_type="image/svg+xml",
-                        headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
-                    )
+                if node_id:
+                    # Export the node directly using the pre-loaded node ID
+                    svg_content = figma_client.export_node_as_svg(brand_kit_file_key, node_id, export_request.color)
+                    
+                    if svg_content:
+                        return StreamingResponse(
+                            io.BytesIO(svg_content.encode()),
+                            media_type="image/svg+xml",
+                            headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
+                        )
+                    else:
+                        raise Exception("Failed to export SVG from Figma")
                 else:
-                    raise Exception("Failed to export SVG from Figma")
+                    raise Exception(f"No node ID found for '{export_request.node_name}'")
             else:
-                raise Exception(f"Node '{export_request.node_name}' not found in Brand Kit")
+                # Fallback to searching for the node by name
+                file_data = figma_client.get_file(brand_kit_file_key)
+                nodes = figma_client.search_node_by_name(brand_kit_file_key, export_request.node_name)
+                
+                if nodes and len(nodes) > 0:
+                    node = nodes[0]
+                    node_id = node['id']
+                    
+                    svg_content = figma_client.export_node_as_svg(brand_kit_file_key, node_id, export_request.color)
+                    
+                    if svg_content:
+                        return StreamingResponse(
+                            io.BytesIO(svg_content.encode()),
+                            media_type="image/svg+xml",
+                            headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
+                        )
+                    else:
+                        raise Exception("Failed to export SVG from Figma")
+                else:
+                    raise Exception(f"Node '{export_request.node_name}' not found in Brand Kit")
                 
         except Exception as figma_error:
             # If Figma export fails, return a placeholder with the requested color
