@@ -175,6 +175,10 @@ ASSET_MAP = {
     'nextdoor logo': ('Nextdoor Wordmark', None),
     'nextdoor wordmark': ('Nextdoor Wordmark', None),
     'nextdoor house': ('Nextdoor House', None),
+    # Add more specific mappings for your Brand Kit
+    'logo-nextdoor-wordmark-0513': ('Nextdoor Wordmark', None),
+    'logo-nextdoor': ('Nextdoor House', None),
+    'chat-right': ('Chat Icon', None),
 }
 
 def is_export_request(message):
@@ -599,52 +603,32 @@ async def export_figma(export_request: ExportRequest):
         # Use Brand Asset Kit file key
         brand_kit_file_key = os.getenv('FIGMA_BRAND_KIT_FILE_KEY', '3x616Uy5sRIDXcXHlNzyB7')
         
-        # Try to export from actual Figma file with timeout handling
+        # Try to export from actual Figma file
         try:
-            import signal
-            import time
+            # Get the file data first
+            file_data = figma_client.get_file(brand_kit_file_key)
             
-            # Set up timeout for Figma API calls (10 seconds)
-            def timeout_handler(signum, frame):
-                raise TimeoutError("Figma API timeout")
+            # Search for the node by name in the file
+            nodes = figma_client.search_node_by_name(brand_kit_file_key, export_request.node_name)
             
-            # Set up signal handler for timeout
-            old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(10)  # 10 second timeout
-            
-            try:
-                # Get the file data first
-                file_data = figma_client.get_file(brand_kit_file_key)
+            if nodes and len(nodes) > 0:
+                # Use the first matching node
+                node = nodes[0]
+                node_id = node['id']
                 
-                # Search for the node by name in the file
-                nodes = figma_client.search_node_by_name(brand_kit_file_key, export_request.node_name)
+                # Export the node as SVG
+                svg_content = figma_client.export_node_as_svg(brand_kit_file_key, node_id, export_request.color)
                 
-                if nodes and len(nodes) > 0:
-                    # Use the first matching node
-                    node = nodes[0]
-                    node_id = node['id']
-                    
-                    # Export the node as SVG
-                    svg_content = figma_client.export_node_as_svg(brand_kit_file_key, node_id, export_request.color)
-                    
-                    if svg_content:
-                        signal.alarm(0)  # Cancel timeout
-                        return StreamingResponse(
-                            io.BytesIO(svg_content.encode()),
-                            media_type="image/svg+xml",
-                            headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
-                        )
-                    else:
-                        raise Exception("Failed to export SVG from Figma")
+                if svg_content:
+                    return StreamingResponse(
+                        io.BytesIO(svg_content.encode()),
+                        media_type="image/svg+xml",
+                        headers={"Content-Disposition": f"attachment; filename={export_request.node_name}.svg"}
+                    )
                 else:
-                    raise Exception(f"Node '{export_request.node_name}' not found in Brand Kit")
-                    
-            finally:
-                signal.alarm(0)  # Cancel timeout
-                signal.signal(signal.SIGALRM, old_handler)  # Restore old handler
-                
-        except TimeoutError:
-            raise Exception("Figma API timeout - please try again")
+                    raise Exception("Failed to export SVG from Figma")
+            else:
+                raise Exception(f"Node '{export_request.node_name}' not found in Brand Kit")
                 
         except Exception as figma_error:
             # If Figma export fails, return a placeholder with the requested color
