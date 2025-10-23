@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 import requests
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import json
 
 app = FastAPI()
@@ -19,10 +19,13 @@ app.add_middleware(
 
 class ChatMessage(BaseModel):
     message: str
+    conversation_history: Optional[List[Dict[str, Any]]] = []
 
 class ChatResponse(BaseModel):
     response: str
     export_data: Optional[Dict[str, Any]] = None
+    sources: Optional[List[str]] = []
+    example_images: Optional[List[str]] = []
 
 # Initialize Figma client
 class FigmaClient:
@@ -105,7 +108,7 @@ async def chat_simple(chat_message: ChatMessage):
             else:
                 response_text = "I couldn't find any Figma files matching your search. Try a different search term."
             
-            return ChatResponse(response=response_text)
+            return ChatResponse(response=response_text, sources=[], example_images=[])
         
         # Check if it's an export request
         export_keywords = ["export", "download", "get", "show me"]
@@ -118,11 +121,13 @@ async def chat_simple(chat_message: ChatMessage):
                     "file_key": "3x616Uy5sRIDXcXHlNzyB7"
                 }
                 response_text = "I can export that for you! Click the download button below to get the logo."
-                return ChatResponse(response=response_text, export_data=export_data)
+                return ChatResponse(response=response_text, export_data=export_data, sources=[], example_images=[])
         
         # Default response
         return ChatResponse(
-            response="I'm the Design & Research Assistant! I can help you search Figma files and export assets. What would you like to do?"
+            response="I'm the Design & Research Assistant! I can help you search Figma files and export assets. What would you like to do?",
+            sources=[],
+            example_images=[]
         )
     
     except Exception as e:
