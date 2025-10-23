@@ -278,11 +278,11 @@ async def chat_simple(chat_message: ChatMessage):
 
 These colors are defined in our Brand Asset Kit and should be used consistently across all Nextdoor materials.
         """
-            return ChatResponse(
-                response=brand_colors_response.strip(),
-                sources=[],
-                example_images=[]
-            )
+        return ChatResponse(
+            response=brand_colors_response.strip(),
+            sources=[],
+            example_images=[]
+        )
     
     # Check if user is asking about typography
     if any(keyword in message.lower() for keyword in ['typography', 'font', 'fonts', 'text', 'typeface', 'heading', 'body text']):
@@ -318,11 +318,11 @@ These colors are defined in our Brand Asset Kit and should be used consistently 
 
 These typography guidelines ensure consistent and readable text across all Nextdoor interfaces.
         """
-            return ChatResponse(
-                response=typography_response.strip(),
-                sources=[],
-                example_images=[]
-            )
+        return ChatResponse(
+            response=typography_response.strip(),
+            sources=[],
+            example_images=[]
+        )
     
     # Check if user is asking about spacing
     if any(keyword in message.lower() for keyword in ['spacing', 'margin', 'padding', 'gap', 'layout']):
@@ -353,11 +353,11 @@ These typography guidelines ensure consistent and readable text across all Nextd
 
 This spacing system creates consistent, balanced layouts across all Nextdoor products.
         """
-            return ChatResponse(
-                response=spacing_response.strip(),
-                sources=[],
-                example_images=[]
-            )
+        return ChatResponse(
+            response=spacing_response.strip(),
+            sources=[],
+            example_images=[]
+        )
     
     # Check if user is asking about components
     if any(keyword in message.lower() for keyword in ['component', 'components', 'button', 'buttons', 'input', 'form', 'card', 'cards']):
@@ -391,11 +391,11 @@ This spacing system creates consistent, balanced layouts across all Nextdoor pro
 
 All components follow our design system and are available in our Brand Asset Kit.
         """
-            return ChatResponse(
-                response=components_response.strip(),
-                sources=[],
-                example_images=[]
-            )
+        return ChatResponse(
+            response=components_response.strip(),
+            sources=[],
+            example_images=[]
+        )
     
     # Check if user is asking about design principles
     if any(keyword in message.lower() for keyword in ['design principle', 'design principles', 'guideline', 'guidelines', 'brand guideline', 'brand guidelines']):
@@ -429,11 +429,11 @@ All components follow our design system and are available in our Brand Asset Kit
 
 These principles guide all design decisions and ensure cohesive user experiences across Nextdoor.
         """
-            return ChatResponse(
-                response=principles_response.strip(),
-                sources=[],
-                example_images=[]
-            )
+        return ChatResponse(
+            response=principles_response.strip(),
+            sources=[],
+            example_images=[]
+        )
     
     # Check if user is asking about latest files
     if any(keyword in message.lower() for keyword in ['latest files', 'recent files', 'new files', 'smb', 'figma file']):
